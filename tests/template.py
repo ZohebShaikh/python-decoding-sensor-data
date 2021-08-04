@@ -47,8 +47,7 @@ class Template(object):
                         for match in self.query_file(filepath):
                             yield filepath, match
                     except SyntaxError as e:
-                        warnings.warn(
-                            "Failed to parse {}:\n{}".format(filepath, e))
+                        warnings.warn("Failed to parse {}:\n{}".format(filepath, e))
 
 
 class TemplateTransformer(ast.NodeTransformer):
@@ -107,7 +106,7 @@ class TemplateTransformer(ast.NodeTransformer):
 
         for i, n in enumerate(body):
             if _is_multiwildcard(n):
-                newbody = body[:i] + Middle() + body[i + 1:]
+                newbody = body[:i] + Middle() + body[i + 1 :]
                 setattr(node, attrname, newbody)
 
     def visit_Attribute(self, node):
@@ -132,7 +131,7 @@ class TemplateTransformer(ast.NodeTransformer):
                 args = (
                     self.visit_list(node.args[:i])
                     + Middle()
-                    + self.visit_list(node.args[i + 1:])
+                    + self.visit_list(node.args[i + 1 :])
                 )
                 break
         else:
@@ -143,7 +142,7 @@ class TemplateTransformer(ast.NodeTransformer):
 
         defaults = [
             (a.arg, self.visit(d))
-            for a, d in zip(node.args[-len(node.defaults):], node.defaults)
+            for a, d in zip(node.args[-len(node.defaults) :], node.defaults)
             if a.arg not in {self.__WILDCARD_NAME, self.__MULTIWILDCARD_NAME}
         ]
 
@@ -162,8 +161,7 @@ class TemplateTransformer(ast.NodeTransformer):
         ]
 
         koa_subset = (
-            positional_final_wildcard and vararg is None and (
-                not node.kwonlyargs)
+            positional_final_wildcard and vararg is None and (not node.kwonlyargs)
         ) or any(a.arg == self.__MULTIWILDCARD_NAME for a in node.kwonlyargs)
 
         if node.kwarg is None:
@@ -219,7 +217,7 @@ class TemplateTransformer(ast.NodeTransformer):
                 node.args = (
                     self.visit_list(node.args[:i])
                     + Middle()
-                    + self.visit_list(node.args[i + 1:])
+                    + self.visit_list(node.args[i + 1 :])
                 )
 
                 break
@@ -240,8 +238,7 @@ class TemplateTransformer(ast.NodeTransformer):
                     if k.arg == self.__MULTIWILDCARD_NAME:
                         continue
                     if k.arg in sample_kwargs:
-                        assert_ast_equal(
-                            sample_kwargs[k.arg], k.value, path + [k.arg])
+                        assert_ast_equal(sample_kwargs[k.arg], k.value, path + [k.arg])
                     else:
                         raise TemplateMismatch(
                             path, "(missing)", "keyword arg %s" % k.arg
@@ -324,12 +321,10 @@ class NameOrAttr(object):
     def __call__(self, node, path):
         if isinstance(node, ast.Name):
             if node.id != self.name:
-                raise TemplatePlainObjMismatch(
-                    path + ["id"], node.id, self.name)
+                raise TemplatePlainObjMismatch(path + ["id"], node.id, self.name)
         elif isinstance(node, ast.Attribute):
             if node.attr != self.name:
-                raise TemplatePlainObjMismatch(
-                    path + ["attr"], node.attr, self.name)
+                raise TemplatePlainObjMismatch(path + ["attr"], node.attr, self.name)
         else:
             raise TemplateNodeTypeMismatch(path, node, "Name or Attribute")
 
@@ -342,14 +337,12 @@ class Middle(object):
 
     def __radd__(self, other):
         if not isinstance(other, list):
-            raise TypeError(
-                "Cannot add {} and Middle objects".format(type(other)))
+            raise TypeError("Cannot add {} and Middle objects".format(type(other)))
         return Middle(other + self.front, self.back)
 
     def __add__(self, other):
         if not isinstance(other, list):
-            raise TypeError(
-                "Cannot add Middle and {} objects".format(type(other)))
+            raise TypeError("Cannot add Middle and {} objects".format(type(other)))
         return Middle(self.front, self.back + other)
 
     def __call__(self, sample_list, path):
@@ -441,8 +434,7 @@ class DefArgsCheck:
                 assert_ast_equal(sample_node.args, self.args)
 
         if self.defaults:
-            sample_args_w_defaults = sample_node.args[-len(
-                sample_node.defaults):]
+            sample_args_w_defaults = sample_node.args[-len(sample_node.defaults) :]
             sample_arg_defaults = {
                 a.arg: d for a, d in zip(sample_args_w_defaults, sample_node.defaults)
             }
@@ -454,8 +446,7 @@ class DefArgsCheck:
                         path + ["defaults", argname], "(missing default)", dflt
                     )
                 else:
-                    assert_ast_equal(dflt, sample_dflt,
-                                     path + ["defaults", argname])
+                    assert_ast_equal(dflt, sample_dflt, path + ["defaults", argname])
 
         if self.vararg:
             assert_ast_equal(sample_node.vararg, self.vararg)
@@ -471,8 +462,7 @@ class DefArgsCheck:
                 sample_arg, sample_dflt = sample_kwonlyargs[argname]
             except KeyError:
                 raise TemplateMismatch(
-                    path +
-                    ["kwonlyargs"], "(missing)", "keyword arg %s" % argname
+                    path + ["kwonlyargs"], "(missing)", "keyword arg %s" % argname
                 )
             else:
                 assert_ast_equal(
@@ -480,8 +470,7 @@ class DefArgsCheck:
                 )
                 if template_dflt is not None:
                     assert_ast_equal(
-                        sample_dflt, template_dflt, path +
-                        ["kw_defaults", argname]
+                        sample_dflt, template_dflt, path + ["kw_defaults", argname]
                     )
 
         if not self.koa_subset:
@@ -489,8 +478,7 @@ class DefArgsCheck:
             excess_names = set(sample_kwonlyargs) - template_kwarg_names
             if excess_names:
                 raise TemplateMismatch(
-                    path +
-                    ["kwonlyargs"], excess_names, "(not present in template)"
+                    path + ["kwonlyargs"], excess_names, "(not present in template)"
                 )
 
         if self.kwarg:
@@ -536,8 +524,7 @@ def assert_ast_equal(sample, template, path=None):
 
         if isinstance(template_field, list):
             if template_field and (
-                isinstance(template_field[0], ast.AST) or callable(
-                    template_field[0])
+                isinstance(template_field[0], ast.AST) or callable(template_field[0])
             ):
                 check_node_list(field_path, sample_field, template_field)
             else:
@@ -554,8 +541,7 @@ def assert_ast_equal(sample, template, path=None):
 
         else:
             if sample_field != template_field:
-                raise TemplatePlainObjMismatch(
-                    field_path, sample_field, template_field)
+                raise TemplatePlainObjMismatch(field_path, sample_field, template_field)
 
 
 def is_ast_equal(sample, template):
@@ -572,8 +558,8 @@ def debug_test_case(node):
     Arguments:
         node {[type]} -- [description]
     """
-    print(json.dumps(node.assign_().n, indent=4)) 
-    print(json.dumps(node.for_().n, indent=4)) 
+    print(json.dumps(node.assign_().n, indent=4))
+    print(json.dumps(node.for_().n, indent=4))
     print(json.dumps(node.returns_call().n, indent=4))
 
 
